@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Cyberball - Protocole 33%</title>
+    <title>Etude Psychologique</title>
     <script src="https://unpkg.com/jspsych@7.3.4"></script>
     <script src="https://unpkg.com/@jspsych/plugin-html-button-response@1.1.3"></script>
     <link href="https://unpkg.com/jspsych@7.3.4/css/jspsych.css" rel="stylesheet" type="text/css" />
@@ -16,28 +16,62 @@
         #pos-julie { top: 20px; left: 250px; }
         #pos-marc { top: 250px; left: 50px; }
         #pos-vous { top: 250px; right: 50px; }
-        #ball-sprite { position: absolute; width: 22px; height: 22px; background: radial-gradient(circle, #ff9500, #ff5e00); border-radius: 50%; transition: all 0.9s cubic-bezier(0.4, 0, 0.2, 1); z-index: 99; top: 80px; left: 290px; }
-        .ui-box { margin-top: 20px; height: 40px; text-align: center; color: #666; font-style: italic; }
+        #ball-sprite { position: absolute; width: 22px; height: 22px; background: radial-gradient(circle, #ff9500, #ff5e00); border-radius: 50%; transition: all 0.7s cubic-bezier(0.4, 0, 0.2, 1); z-index: 99; top: 80px; left: 290px; }
+        .ui-box { margin-top: 20px; height: 40px; text-align: center; color: #666; }
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 20px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .jspsych-btn { border-radius: 20px !important; padding: 10px 25px !important; background-color: #007aff !important; }
     </style>
 </head>
 <body>
     <script>
-        // --- PARAMÈTRES SCIENTIFIQUES ---
-        const totalPassesExperience = 30; 
-        const passesPourMoiMax = 10; // 33% de 30
-        const tempsTotalVise = 240000; // 4 minutes en ms
-        // Temps moyen par passe (mouvement + réflexion bot) = env 8 secondes
-        // -------------------------------
+        // --- CONFIGURATION ---
+        const totalPassesMax = 30; 
+        const passesPourMoiMax = 10; // 33%
+        const googleDocUrl = "TON_LIEN_GOOGLE_DOC_ICI"; 
+        // ---------------------
 
         const jsPsych = initJsPsych({
             on_finish: function() {
-                document.body.innerHTML = '<div style="text-align:center; margin-top:100px; font-family:sans-serif;"><h2>Merci de votre participation</h2><p>L\'exercice est terminé.</p></div>';
+                document.body.innerHTML = `
+                    <div style="text-align:center; padding:50px; background:white; border-radius:20px; box-shadow:0 5px 15px rgba(0,0,0,0.1);">
+                        <h2>Partie terminée</h2>
+                        <p>Merci pour votre participation.</p>
+                        <p>Veuillez maintenant cliquer sur le bouton ci-dessous pour finaliser le questionnaire :</p>
+                        <br>
+                        <a href="${googleDocUrl}" class="jspsych-btn" style="text-decoration:none; color:white;">Retourner au questionnaire</a>
+                    </div>`;
             }
         });
 
         let passesEffectuees = 0;
         let mesPassesRecues = 0;
 
+        // 1. Message de bienvenue
+        const welcome = {
+            type: jsPsychHtmlButtonResponse,
+            stimulus: `<h2>Etude de visualisation</h2>
+                       <p>Vous allez participer à un jeu de passes avec deux autres joueurs connectés.<br>
+                       Veuillez rester concentré tout au long de la session.</p>`,
+            choices: ['Lancer la session']
+        };
+
+        // 2. Micro-temps d'attente (Simulation connexion)
+        const waiting = {
+            type: jsPsychHtmlButtonResponse,
+            stimulus: `<h3>Connexion en cours...</h3>
+                       <div class="loader"></div>
+                       <p id="wait-msg">Recherche d'autres joueurs disponibles...</p>`,
+            choices: [],
+            trial_duration: 4000, // Attente de 4 secondes
+            on_load: function() {
+                setTimeout(() => {
+                    document.getElementById('wait-msg').innerHTML = "Joueurs trouvés : Julie et Marc.<br>Initialisation du terrain...";
+                }, 2000);
+            }
+        };
+
+        // 3. Le Jeu
         const game_trial = {
             type: jsPsychHtmlButtonResponse,
             stimulus: `
@@ -47,7 +81,7 @@
                     <div id="pos-vous" class="player"><img src="https://api.dicebear.com/7.x/avataaars/svg?seed=User"><br>Vous</div>
                     <div id="ball-sprite"></div>
                 </div>
-                <div class="ui-box"><p id="instruction">Initialisation de la session...</p></div>`,
+                <div class="ui-box"><p id="instruction"></p></div>`,
             choices: [],
             on_load: function() {
                 const ball = document.getElementById('ball-sprite');
@@ -71,51 +105,42 @@
                     julieDiv.onclick = null;
                     marcDiv.onclick = null;
 
-                    if (passesEffectuees >= totalPassesExperience) {
-                        setTimeout(() => jsPsych.finishTrial(), 3000);
+                    if (passesEffectuees >= totalPassesMax) {
+                        setTimeout(() => jsPsych.finishTrial(), 2000);
                         return;
                     }
 
                     if (target === 'vous') {
                         mesPassesRecues++;
-                        instr.innerHTML = "À vous ! Cliquez sur un joueur pour lancer.";
+                        instr.innerHTML = "<strong>C'est à vous !</strong> Cliquez sur Julie ou Marc.";
                         setTimeout(() => {
                             julieDiv.classList.add('cliquable');
                             marcDiv.classList.add('cliquable');
                             julieDiv.onclick = () => move('julie');
                             marcDiv.onclick = () => move('marc');
-                        }, 500); 
+                        }, 400); 
                     } else {
-                        instr.innerHTML = "Réflexion des autres joueurs...";
+                        instr.innerHTML = "Les autres joueurs réfléchissent...";
                         
-                        // TEMPS DE DÉCISION (Moyennement long : entre 4 et 7 secondes)
-                        const delaiReflexion = Math.floor(Math.random() * 3000) + 4000;
+                        // TEMPS DE RÉFLEXION VARIABLE (entre 1.5s et 3.5s)
+                        const delaiVariable = Math.floor(Math.random() * 2000) + 1500;
 
                         setTimeout(() => {
                             let next;
-                            // Forcer le 33% (10 passes max pour le joueur)
                             if (mesPassesRecues < passesPourMoiMax) {
-                                // On tire au sort : 1 chance sur 2 de l'envoyer au joueur
-                                const randomChoice = Math.random();
-                                if (randomChoice < 0.5) {
-                                    next = 'vous';
-                                } else {
-                                    next = (target === 'julie') ? 'marc' : 'julie';
-                                }
+                                next = Math.random() < 0.5 ? 'vous' : (target === 'julie' ? 'marc' : 'julie');
                             } else {
-                                // Quota de 33% atteint : les bots ne jouent plus qu'entre eux
                                 next = (target === 'julie') ? 'marc' : 'julie';
                             }
                             move(next);
-                        }, delaiReflexion);
+                        }, delaiVariable);
                     }
                 }
-
-                setTimeout(() => move('julie'), 2000);
+                setTimeout(() => move('julie'), 1000);
             }
         };
 
-        jsPsych.run([game_trial]);
+        jsPsych.run([welcome, waiting, game_trial]);
     </script>
 </body>
 </html>
