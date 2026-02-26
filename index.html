@@ -20,58 +20,59 @@
         .ui-box { margin-top: 20px; height: 40px; text-align: center; color: #666; }
         .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 20px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .jspsych-btn { border-radius: 20px !important; padding: 10px 25px !important; background-color: #007aff !important; }
+        .jspsych-btn { border-radius: 20px !important; padding: 10px 25px !important; background-color: #007aff !important; color: white !important; text-decoration: none; border: none; cursor: pointer; font-size: 16px; }
+        .welcome-box { text-align: center; background: white; padding: 40px; border-radius: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); max-width: 500px; }
     </style>
 </head>
 <body>
     <script>
         // --- CONFIGURATION ---
         const totalPassesMax = 30; 
-        const passesPourMoiMax = 10; // 33%
+        const quotaJoueur = 10; // 33% de 30
         const googleDocUrl = "TON_LIEN_GOOGLE_DOC_ICI"; 
         // ---------------------
 
         const jsPsych = initJsPsych({
             on_finish: function() {
                 document.body.innerHTML = `
-                    <div style="text-align:center; padding:50px; background:white; border-radius:20px; box-shadow:0 5px 15px rgba(0,0,0,0.1);">
+                    <div style="text-align:center; padding:50px; background:white; border-radius:20px; box-shadow:0 5px 15px rgba(0,0,0,0.1); font-family:sans-serif;">
                         <h2>Partie terminée</h2>
                         <p>Merci pour votre participation.</p>
-                        <p>Veuillez maintenant cliquer sur le bouton ci-dessous pour finaliser le questionnaire :</p>
-                        <br>
-                        <a href="${googleDocUrl}" class="jspsych-btn" style="text-decoration:none; color:white;">Retourner au questionnaire</a>
+                        <br><br>
+                        <a href="${googleDocUrl}" class="jspsych-btn">Retourner au questionnaire</a>
                     </div>`;
             }
         });
 
-        let passesEffectuees = 0;
+        let passesCompteur = 0;
         let mesPassesRecues = 0;
 
-        // 1. Message de bienvenue
+        // Écran 1 : Sobre avec règles
         const welcome = {
             type: jsPsychHtmlButtonResponse,
-            stimulus: `<h2>Etude de visualisation</h2>
-                       <p>Vous allez participer à un jeu de passes avec deux autres joueurs connectés.<br>
-                       Veuillez rester concentré tout au long de la session.</p>`,
-            choices: ['Lancer la session']
+            stimulus: `
+                <div class="welcome-box">
+                    <p style="font-size: 20px; font-weight: bold;">Êtes-vous prêt pour le jeu ?</p>
+                    <p style="color: #555; line-height: 1.5;">Vous allez faire un jeu de passes avec deux autres personnes.<br>
+                    Pour choisir à qui envoyer le ballon, cliquez sur le joueur sélectionné.</p>
+                </div>`,
+            choices: ['Commencer']
         };
 
-        // 2. Micro-temps d'attente (Simulation connexion)
+        // Écran 2 : Attente réseau
         const waiting = {
             type: jsPsychHtmlButtonResponse,
             stimulus: `<h3>Connexion en cours...</h3>
                        <div class="loader"></div>
-                       <p id="wait-msg">Recherche d'autres joueurs disponibles...</p>`,
+                       <p id="wait-msg">Recherche de participants...</p>`,
             choices: [],
-            trial_duration: 4000, // Attente de 4 secondes
+            trial_duration: 3500,
             on_load: function() {
-                setTimeout(() => {
-                    document.getElementById('wait-msg').innerHTML = "Joueurs trouvés : Julie et Marc.<br>Initialisation du terrain...";
-                }, 2000);
+                setTimeout(() => { document.getElementById('wait-msg').innerHTML = "Joueurs trouvés.<br>Initialisation..."; }, 2000);
             }
         };
 
-        // 3. Le Jeu
+        // Écran 3 : Le Jeu (Logique diffuse)
         const game_trial = {
             type: jsPsychHtmlButtonResponse,
             stimulus: `
@@ -98,21 +99,21 @@
                 function move(target) {
                     ball.style.top = coords[target].top;
                     ball.style.left = coords[target].left;
-                    passesEffectuees++;
+                    passesCompteur++;
 
                     julieDiv.classList.remove('cliquable');
                     marcDiv.classList.remove('cliquable');
                     julieDiv.onclick = null;
                     marcDiv.onclick = null;
 
-                    if (passesEffectuees >= totalPassesMax) {
+                    if (passesCompteur >= totalPassesMax) {
                         setTimeout(() => jsPsych.finishTrial(), 2000);
                         return;
                     }
 
                     if (target === 'vous') {
                         mesPassesRecues++;
-                        instr.innerHTML = "<strong>C'est à vous !</strong> Cliquez sur Julie ou Marc.";
+                        instr.innerHTML = "À vous de jouer.";
                         setTimeout(() => {
                             julieDiv.classList.add('cliquable');
                             marcDiv.classList.add('cliquable');
@@ -120,15 +121,17 @@
                             marcDiv.onclick = () => move('marc');
                         }, 400); 
                     } else {
-                        instr.innerHTML = "Les autres joueurs réfléchissent...";
-                        
-                        // TEMPS DE RÉFLEXION VARIABLE (entre 1.5s et 3.5s)
-                        const delaiVariable = Math.floor(Math.random() * 2000) + 1500;
+                        instr.innerHTML = "";
+                        const delaiVariable = Math.floor(Math.random() * 2000) + 1800;
 
                         setTimeout(() => {
                             let next;
-                            if (mesPassesRecues < passesPourMoiMax) {
-                                next = Math.random() < 0.5 ? 'vous' : (target === 'julie' ? 'marc' : 'julie');
+                            let passesRestantesTotal = totalPassesMax - passesCompteur;
+                            let quotaRestantJoueur = quotaJoueur - mesPassesRecues;
+                            let probabilitePourMoi = quotaRestantJoueur / passesRestantesTotal;
+
+                            if (Math.random() < probabilitePourMoi && quotaRestantJoueur > 0) {
+                                next = 'vous';
                             } else {
                                 next = (target === 'julie') ? 'marc' : 'julie';
                             }
