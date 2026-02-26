@@ -10,13 +10,14 @@
     <script>
         const jsPsych = initJsPsych({
             on_finish: function() {
-                // Affiche les données brutes à la fin pour tes notes
-                document.body.innerHTML = '<div style="padding:20px;"><h3>Fin de l'exercice</h3><p>Merci de votre participation. Vous pouvez fermer cette fenêtre.</p></div>';
-                jsPsych.data.displayData();
+                // Ce qui s'affiche à la toute fin pour le participant
+                document.body.innerHTML = '<div style="padding:40px; text-align:center; font-family:sans-serif;">' +
+                    '<h3>Merci de votre participation</h3>' +
+                    '<p>L\'exercice est terminé. Vous pouvez maintenant fermer cette page.</p></div>';
             }
         });
 
-        // Pile ou face automatique : 50% de chance d'être exclu
+        // Pile ou face : 50% de chance d'être exclu
         const isExcluded = Math.random() < 0.5;
         jsPsych.data.addProperties({ condition: isExcluded ? 'exclusion' : 'inclusion' });
 
@@ -25,21 +26,29 @@
         const trial = {
             type: jsPsychHtmlButtonResponse,
             stimulus: `
-                <div style="border:1px solid #ccc; padding:20px; border-radius:10px; width:400px; margin:auto; font-family:sans-serif;">
+                <div style="border:1px solid #ccc; padding:20px; border-radius:10px; width:400px; margin:auto; font-family:sans-serif; text-align:left;">
                     <p><strong>@Vous :</strong> "Il fait super beau aujourd'hui !"</p>
                     <hr>
-                    <div id="feedback" style="height:50px; font-weight:bold;"></div>
+                    <div id="feedback" style="height:50px; font-weight:bold; display:flex; align-items:center;">
+                        <span style="color:gray; font-style:italic;">En attente de réactions...</span>
+                    </div>
                 </div>`,
             choices: ['Actualiser les notifications'],
             on_load: function() {
+                // On cache le bouton au début pour forcer l'attente
+                document.querySelector('.jspsych-btn').style.display = 'none';
+                
                 setTimeout(() => {
                     const div = document.getElementById('feedback');
                     if (isExcluded) {
-                        div.innerHTML = "<span style='color:red;'>Aucune interaction</span>";
+                        div.innerHTML = "<span style='color:#e74c3c;'>Aucune nouvelle mention J'aime ou commentaire.</span>";
                     } else {
-                        div.innerHTML = "<span style='color:green;'>@Julie et 2 autres personnes ont aimé</span>";
+                        div.innerHTML = "<span style='color:#2ecc71;'>@Julie, @Marc et 2 autres personnes ont aimé votre post !</span>";
                     }
-                }, 1200);
+                    // On réaffiche le bouton après la réponse
+                    document.querySelector('.jspsych-btn').style.display = 'inline-block';
+                    document.querySelector('.jspsych-btn').innerHTML = 'Continuer';
+                }, 2000); // 2 secondes d'attente pour créer du suspense
             }
         };
 
@@ -47,5 +56,4 @@
         jsPsych.run(timeline);
     </script>
 </body>
-</html>
 </html>
