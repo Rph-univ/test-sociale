@@ -8,23 +8,23 @@
     <style>
         body { background-color: #f0f2f5; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
         
-        /* Terrain de jeu */
         .game-canvas { position: relative; width: 600px; height: 400px; background: white; border-radius: 20px; border: 2px solid #ddd; margin: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
         .player { position: absolute; width: 100px; text-align: center; font-size: 14px; font-weight: bold; transition: transform 0.2s; }
         .player img { width: 70px; height: 70px; border-radius: 50%; background: #eee; border: 3px solid #ccc; }
+        
         .cliquable { cursor: pointer; }
         .cliquable:hover { transform: scale(1.1); }
         .cliquable img { border-color: #007aff; box-shadow: 0 0 15px rgba(0,122,255,0.4); }
         
-        /* Positions */
         #pos-julie { top: 20px; left: 250px; }
         #pos-marc { top: 250px; left: 50px; }
         #pos-vous { top: 250px; right: 50px; }
         
-        #ball-sprite { position: absolute; width: 22px; height: 22px; background: radial-gradient(circle, #ff9500, #ff5e00); border-radius: 50%; transition: all 0.7s cubic-bezier(0.4, 0, 0.2, 1); z-index: 99; top: 80px; left: 290px; }
-        .ui-box { margin-top: 20px; height: 40px; text-align: center; color: #666; }
+        /* Transition de la balle ralentie à 1.2s */
+        #ball-sprite { position: absolute; width: 22px; height: 22px; background: radial-gradient(circle, #ff9500, #ff5e00); border-radius: 50%; transition: all 1.2s cubic-bezier(0.4, 0, 0.2, 1); z-index: 99; top: 80px; left: 290px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        
+        .ui-box { margin-top: 20px; height: 40px; text-align: center; color: #666; font-style: italic; }
 
-        /* Style de la boîte de connexion */
         .welcome-box { text-align: center; background: white; padding: 40px; border-radius: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); max-width: 500px; }
         .connect-container { display: flex; justify-content: space-around; margin: 30px 0; min-height: 100px; }
         .connect-card { opacity: 0.2; transition: opacity 0.5s; text-align: center; font-size: 12px; }
@@ -60,7 +60,6 @@
         let passesCompteur = 0;
         let mesPassesRecues = 0;
 
-        // 1. Accueil
         const welcome = {
             type: jsPsychHtmlButtonResponse,
             stimulus: `
@@ -72,7 +71,6 @@
             choices: ['Commencer']
         };
 
-        // 2. Simulation de connexion visuelle
         const connection = {
             type: jsPsychHtmlButtonResponse,
             stimulus: `
@@ -98,25 +96,22 @@
             choices: [],
             trial_duration: 6000,
             on_load: function() {
-                // Julie se connecte après 1.5s
                 setTimeout(() => {
                     document.getElementById('card-julie').classList.add('active');
                     document.getElementById('status-julie').innerHTML = "● Connecté";
                     document.getElementById('status-julie').className = "status-dot";
-                }, 1500);
+                }, 1800);
 
-                // Marc se connecte après 3.5s
                 setTimeout(() => {
                     document.getElementById('card-marc').classList.add('active');
                     document.getElementById('status-marc').innerHTML = "● Connecté";
                     document.getElementById('status-marc').className = "status-dot";
                     document.getElementById('global-status').innerHTML = "Tous les joueurs sont prêts !";
                     document.getElementById('global-loader').style.display = "none";
-                }, 3500);
+                }, 3800);
             }
         };
 
-        // 3. Le Jeu
         const game_trial = {
             type: jsPsychHtmlButtonResponse,
             stimulus: `
@@ -151,22 +146,25 @@
                     marcDiv.onclick = null;
 
                     if (passesCompteur >= totalPassesMax) {
-                        setTimeout(() => jsPsych.finishTrial(), 2000);
+                        setTimeout(() => jsPsych.finishTrial(), 2500);
                         return;
                     }
 
                     if (target === 'vous') {
                         mesPassesRecues++;
                         instr.innerHTML = "À vous de jouer.";
+                        // On attend la fin de l'animation de la balle avant de permettre le clic
                         setTimeout(() => {
                             julieDiv.classList.add('cliquable');
                             marcDiv.classList.add('cliquable');
                             julieDiv.onclick = () => move('julie');
                             marcDiv.onclick = () => move('marc');
-                        }, 400); 
+                        }, 1300); 
                     } else {
                         instr.innerHTML = "";
-                        const delaiVariable = Math.floor(Math.random() * 2000) + 1800;
+                        
+                        // TEMPS DE RÉFLEXION ALLONGÉ ET VARIABLE (entre 2.5s et 5.5s)
+                        const delaiVariable = Math.floor(Math.random() * 3000) + 2500;
 
                         setTimeout(() => {
                             let next;
@@ -183,7 +181,8 @@
                         }, delaiVariable);
                     }
                 }
-                setTimeout(() => move('julie'), 1000);
+                // Premier lancer après la connexion
+                setTimeout(() => move('julie'), 1500);
             }
         };
 
