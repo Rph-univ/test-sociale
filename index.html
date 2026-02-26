@@ -1,42 +1,51 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>Mon Expérience Sociale</title>
+<head>
+    <title>Etude Sociale</title>
     <script src="https://unpkg.com/jspsych@7.3.4"></script>
     <script src="https://unpkg.com/@jspsych/plugin-html-button-response@1.1.3"></script>
     <link href="https://unpkg.com/jspsych@7.3.4/css/jspsych.css" rel="stylesheet" type="text/css" />
-  </head>
-  <body></body>
-  <script>
-    // --- TON CODE JAVASCRIPT ICI ---
-    const jsPsych = initJsPsych({
-        on_finish: function() {
-            jsPsych.data.displayData(); // Affiche les résultats à la fin
-        }
-    });
+</head>
+<body>
+    <script>
+        const jsPsych = initJsPsych({
+            on_finish: function() {
+                // Affiche les données brutes à la fin pour tes notes
+                document.body.innerHTML = '<div style="padding:20px;"><h3>Fin de l'exercice</h3><p>Merci de votre participation. Vous pouvez fermer cette fenêtre.</p></div>';
+                jsPsych.data.displayData();
+            }
+        });
 
-    let timeline = [];
-    let isExcluded = true; // Variable de condition
+        // Pile ou face automatique : 50% de chance d'être exclu
+        const isExcluded = Math.random() < 0.5;
+        jsPsych.data.addProperties({ condition: isExcluded ? 'exclusion' : 'inclusion' });
 
-    const socialTrial = {
-      type: jsPsychHtmlButtonResponse,
-      stimulus: `
-        <div style="border: 1px solid #ccc; padding: 20px; border-radius: 10px; width: 400px; margin: auto;">
-          <p><strong>@Vous :</strong> "Je passe une super journée au parc !"</p>
-          <hr>
-          <div id="feedback-area" style="height: 50px; color: blue;"></div>
-        </div>`,
-      choices: ['Actualiser les notifications'],
-      on_load: function() {
-        setTimeout(() => {
-          const area = document.getElementById('feedback-area');
-          area.innerHTML = isExcluded ? "<em>Aucune réaction...</em>" : "<strong>@Julie</strong> a aimé votre post !";
-          if(isExcluded) area.style.color = "red";
-        }, 1500);
-      }
-    };
+        let timeline = [];
 
-    timeline.push(socialTrial);
-    jsPsych.run(timeline);
-  </script>
+        const trial = {
+            type: jsPsychHtmlButtonResponse,
+            stimulus: `
+                <div style="border:1px solid #ccc; padding:20px; border-radius:10px; width:400px; margin:auto; font-family:sans-serif;">
+                    <p><strong>@Vous :</strong> "Il fait super beau aujourd'hui !"</p>
+                    <hr>
+                    <div id="feedback" style="height:50px; font-weight:bold;"></div>
+                </div>`,
+            choices: ['Actualiser les notifications'],
+            on_load: function() {
+                setTimeout(() => {
+                    const div = document.getElementById('feedback');
+                    if (isExcluded) {
+                        div.innerHTML = "<span style='color:red;'>Aucune interaction</span>";
+                    } else {
+                        div.innerHTML = "<span style='color:green;'>@Julie et 2 autres personnes ont aimé</span>";
+                    }
+                }, 1200);
+            }
+        };
+
+        timeline.push(trial);
+        jsPsych.run(timeline);
+    </script>
+</body>
+</html>
 </html>
