@@ -1,39 +1,55 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Cyberball Study</title>
+    <title>Etude Psychologique - Cyberball</title>
     <script src="https://unpkg.com/jspsych@7.3.4"></script>
     <script src="https://unpkg.com/@jspsych/plugin-html-button-response@1.1.3"></script>
     <link href="https://unpkg.com/jspsych@7.3.4/css/jspsych.css" rel="stylesheet" type="text/css" />
     <style>
-        .game-canvas { position: relative; width: 600px; height: 400px; background: white; border-radius: 20px; border: 2px solid #ddd; margin: auto; }
+        body { background-color: #f0f2f5; font-family: -apple-system, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        .game-canvas { position: relative; width: 600px; height: 400px; background: white; border-radius: 20px; border: 2px solid #ddd; margin: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
         .player { position: absolute; width: 80px; text-align: center; font-size: 14px; font-weight: bold; }
         .player img { width: 50px; height: 50px; border-radius: 50%; background: #eee; border: 2px solid #007aff; }
         #pos-julie { top: 20px; left: 260px; }
         #pos-marc { top: 280px; left: 50px; }
         #pos-vous { top: 280px; right: 50px; }
-        #ball-sprite { position: absolute; width: 20px; height: 20px; background: orange; border-radius: 50%; transition: all 0.7s ease-in-out; z-index: 99; top: 80px; left: 290px; }
+        #ball-sprite { position: absolute; width: 20px; height: 20px; background: orange; border-radius: 50%; transition: all 0.7s cubic-bezier(0.4, 0, 0.2, 1); z-index: 99; top: 80px; left: 290px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .ui-box { margin-top: 20px; height: 60px; text-align: center; }
+        .jspsych-btn { border-radius: 20px !important; padding: 10px 20px !important; background-color: #007aff !important; }
     </style>
 </head>
 <body>
     <script>
+        // Initialisation de l'expérience
         const jsPsych = initJsPsych({
             on_finish: function() {
-                jsPsych.data.displayData();
+                // Message de fin propre
+                document.body.innerHTML = `
+                    <div style="margin: auto; max-width: 500px; text-align: center; padding: 40px; background: white; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+                        <h2 style="color: #007aff;">Merci de votre participation</h2>
+                        <p>L'exercice est maintenant terminé. Vos réponses ont été enregistrées.</p>
+                        <p>Vous pouvez fermer cet onglet en toute sécurité.</p>
+                    </div>`;
+                // Les données sont envoyées dans la console (F12)
+                console.log(jsPsych.data.get().asJSON());
             }
         });
 
+        // Tirage au sort : Exclusion ou Inclusion
         const isExcluded = Math.random() < 0.5;
         let passes = 0;
+        const totalPassesMax = 40; // Le jeu s'arrête après 40 passes
 
-        // ÉCRAN 1 : ACCUEIL
+        // Étape 1 : Accueil
         const welcome = {
             type: jsPsychHtmlButtonResponse,
-            stimulus: "<h2>Prêt pour l'exercice ?</h2><p>Le jeu de passes va commencer.</p>",
-            choices: ['Lancer le jeu']
+            stimulus: `<h3>Bienvenue dans cet exercice de visualisation mentale</h3>
+                       <p>Vous allez jouer à un jeu de passes virtuel avec deux autres participants en ligne (Julie et Marc).<br>
+                       Imaginez la scène le plus réellement possible.</p>`,
+            choices: ['Commencer la partie']
         };
 
-        // ÉCRAN 2 : LE JEU (Tout est généré ici)
+        // Étape 2 : Le Jeu Cyberball
         const game_trial = {
             type: jsPsychHtmlButtonResponse,
             stimulus: `
@@ -43,8 +59,8 @@
                     <div id="pos-vous" class="player"><img src="https://api.dicebear.com/7.x/avataaars/svg?seed=User"><br>Vous</div>
                     <div id="ball-sprite"></div>
                 </div>
-                <div id="game-ui" style="margin-top:20px; height: 50px;">
-                    <p id="instruction">Attente des autres joueurs...</p>
+                <div class="ui-box">
+                    <p id="instruction" style="color: #666;">Connexion aux autres joueurs...</p>
                 </div>`,
             choices: ['Julie', 'Marc'],
             button_html: '<button id="btn-%choice%" class="jspsych-btn" style="display:none; margin: 0 10px;">Lancer à %choice%</button>',
@@ -60,47 +76,57 @@
                     'vous': { top: '290px', left: '500px' }
                 };
 
-                function move(who) {
-                    ball.style.top = coords[who].top;
-                    ball.style.left = coords[who].left;
+                function move(target) {
+                    ball.style.top = coords[target].top;
+                    ball.style.left = coords[target].left;
                     passes++;
 
-                    if (passes > 15) { 
-                        setTimeout(() => jsPsych.finishTrial(), 1500);
+                    // Fin du jeu
+                    if (passes >= totalPassesMax) {
+                        setTimeout(() => jsPsych.finishTrial(), 2000);
                         return;
                     }
 
-                    if (who === 'vous') {
+                    if (target === 'vous') {
+                        // C'est au tour de l'utilisateur
+                        instr.innerHTML = "<strong>À VOUS !</strong> Choisissez à qui lancer la balle.";
                         btnJulie.style.display = 'inline-block';
                         btnMarc.style.display = 'inline-block';
-                        instr.innerHTML = "À vous ! Cliquez sur un bouton ci-dessous.";
                     } else {
+                        // C'est au tour d'un bot
+                        instr.innerHTML = "Julie et Marc s'échangent la balle...";
                         btnJulie.style.display = 'none';
                         btnMarc.style.display = 'none';
-                        instr.innerHTML = "Julie et Marc s'échangent la balle...";
-                        
+
                         setTimeout(() => {
                             let next;
-                            if (isExcluded) {
-                                next = (who === 'julie') ? 'marc' : 'julie';
+                            if (isExcluded && passes > 5) { 
+                                // Ostracisme : Après 5 passes d'accueil, les bots s'excluent
+                                next = (target === 'julie') ? 'marc' : 'julie';
                             } else {
-                                const options = (who === 'julie') ? ['marc', 'vous'] : ['julie', 'vous'];
+                                // Inclusion : Aléatoire entre les deux autres
+                                const options = (target === 'julie') ? ['marc', 'vous'] : ['julie', 'vous'];
                                 next = options[Math.floor(Math.random() * options.length)];
                             }
                             move(next);
-                        }, 1500);
+                        }, 1200);
                     }
                 }
 
-                // Action des boutons
+                // Liaison des boutons
                 btnJulie.onclick = () => move('julie');
                 btnMarc.onclick = () => move('marc');
 
-                // Démarrage auto avec Julie
-                setTimeout(() => move('julie'), 1000);
+                // Lancement automatique (la balle commence chez Julie)
+                setTimeout(() => move('julie'), 1500);
+            },
+            on_finish: function(data) {
+                // Enregistre la condition dans les résultats
+                data.condition = isExcluded ? 'Exclusion' : 'Inclusion';
             }
         };
 
+        // Lancement de la séquence
         jsPsych.run([welcome, game_trial]);
     </script>
 </body>
