@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Mon Expérience Sociale</title>
+    <script src="https://unpkg.com/jspsych@7.3.4"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-html-button-response@1.1.3"></script>
+    <link href="https://unpkg.com/jspsych@7.3.4/css/jspsych.css" rel="stylesheet" type="text/css" />
+  </head>
+  <body></body>
+  <script>
+    // --- TON CODE JAVASCRIPT ICI ---
+    const jsPsych = initJsPsych({
+        on_finish: function() {
+            jsPsych.data.displayData(); // Affiche les résultats à la fin
+        }
+    });
+
+    let timeline = [];
+    let isExcluded = true; // Variable de condition
+
+    const socialTrial = {
+      type: jsPsychHtmlButtonResponse,
+      stimulus: `
+        <div style="border: 1px solid #ccc; padding: 20px; border-radius: 10px; width: 400px; margin: auto;">
+          <p><strong>@Vous :</strong> "Je passe une super journée au parc !"</p>
+          <hr>
+          <div id="feedback-area" style="height: 50px; color: blue;"></div>
+        </div>`,
+      choices: ['Actualiser les notifications'],
+      on_load: function() {
+        setTimeout(() => {
+          const area = document.getElementById('feedback-area');
+          area.innerHTML = isExcluded ? "<em>Aucune réaction...</em>" : "<strong>@Julie</strong> a aimé votre post !";
+          if(isExcluded) area.style.color = "red";
+        }, 1500);
+      }
+    };
+
+    timeline.push(socialTrial);
+    jsPsych.run(timeline);
+  </script>
+</html>
