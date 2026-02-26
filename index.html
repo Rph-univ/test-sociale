@@ -26,11 +26,11 @@
 </head>
 <body>
     <script>
-        // --- CONFIGURATION ---
-        const totalPassesMax = 30; 
-        const quotaJoueur = 10; // 33% de 30
+        // --- CONFIGURATION MISE À JOUR ---
+        const totalPassesMax = 40; 
+        const quotaJoueur = 13; // Environ 33% de 40
         const googleDocUrl = "TON_LIEN_GOOGLE_DOC_ICI"; 
-        // ---------------------
+        // ---------------------------------
 
         const jsPsych = initJsPsych({
             on_finish: function() {
@@ -47,7 +47,6 @@
         let passesCompteur = 0;
         let mesPassesRecues = 0;
 
-        // Écran 1 : Sobre avec règles
         const welcome = {
             type: jsPsychHtmlButtonResponse,
             stimulus: `
@@ -59,7 +58,6 @@
             choices: ['Commencer']
         };
 
-        // Écran 2 : Attente réseau
         const waiting = {
             type: jsPsychHtmlButtonResponse,
             stimulus: `<h3>Connexion en cours...</h3>
@@ -72,7 +70,6 @@
             }
         };
 
-        // Écran 3 : Le Jeu (Logique diffuse)
         const game_trial = {
             type: jsPsychHtmlButtonResponse,
             stimulus: `
